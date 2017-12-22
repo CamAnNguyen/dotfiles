@@ -1,11 +1,15 @@
-xrandr --output HDMI2 --auto --primary --output eDP1 --auto --left-of HDMI2
-
-feh --bg-scale ~/6956966-fire-planet-space-wallpaper-free-hd-image.jpg
-
-udiskie &
+#!/bin/sh
 
 export GTK_IM_MODULE=fcitx
 export QT_IM_MODULE=fcitx
 export XMODIFIERS="@im=fcitx"
+
+export LANG=en_US.UTF-8
+
+xrandr --output HDMI-2 --auto --primary --output eDP-1 --auto --right-of HDMI-2
+
+feh --bg-scale ~/Pictures/Wallpapers/wallpaper.png 
+
+udiskie &
 
 exec i3

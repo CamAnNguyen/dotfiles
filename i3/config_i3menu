@@ -1,0 +1,300 @@
+# vim:filetype=i3
+#
+# Please see http://i3wm.org/docs/userguide.html for a complete reference!
+
+smart_gaps on
+gaps inner 10
+# gaps outer 10
+smart_borders on
+
+set $mod Mod4
+
+set $OUTPUT_E HDMI2
+set $OUTPUT_I eDP1
+
+set $i3_path ~/.i3
+set $pictures_folder ~/Pictures
+
+# Fancy names for workspaces
+set $w1 1: WWW
+set $w2 2: TERM
+# set $w3 3: MAIL
+set $w3 3: HIPCHAT
+set $w4 4: CHAT
+set $w5 5: FILE
+set $w6 6
+set $w7 7
+set $w8 8
+set $w9 9
+set $w10 10
+
+# http://i3wm.org/docs/userguide.html#_layout_mode_for_new_containers
+workspace_layout tabbed
+
+## my custom binds
+bindsym $mod+Ctrl+l exec xset dpms force off && i3lock -c 000000
+#bindsym $mod+Ctrl+l exec --no-startup-id $i3_path/i3exit lock, mode "default"
+bindsym $mod+n exec nautilus --no-desktop &
+bindsym $mod+Shift+B exec i3-input -F 'exec $i3_path/conky/brightnesslevel.sh set %s' -P 'Set brightness to: '
+bindsym Mod1+Shift+K exec i3-input -F 'exec setxkbmap %s' -P 'Set keyboard layout to: '
+
+## Assign section
+assign [class="^Firefox$"]      → $w1
+assign [title="^DownThemAll$"]  → $w1
+assign [title="^Print$"]        → $w1
+assign [class="terminal"]       → $w2
+assign [class="^Roxterm$"]      → $w2
+# assign [class="^HipChat$"]      → $w3
+assign [class="^Evolution$"]    → $w3
+assign [class="Buddy List"]     → $w4
+assign [class="Pidgin"]         → $w4
+assign [class="^Nautilus$"]     → $w5
+
+#for_window [class="Guake"] floating enable
+for_window [window_role="pop-up"] floating enable
+for_window [window_role="prefwindow"] floating enable
+for_window [class="^Skype$"] floating enable
+for_window [class="notify"] floating enable border 1pixel
+for_window [class="update-manager"] floating enable border 1pixel
+# for_window [class="gnome-calculator"] floating enable border 1pixel resize 640 480
+for_window [title="Kupfer"] floating enable border 1pixel
+#for_window [class="terminal"] border 1pixel
+for_window [title="Pidgin"] move left; resize shrink right 31px or 31 ppt
+for_window [class="gnome-panel"] move to output $OUTPUT_E
+for_window [class="vlc"] floating enable
+for_window [class="^Roxterm$"] border 1pixel
+
+# summon most used apps
+bindsym $mod+F1 [class="Firefox"]       move workspace current
+bindsym $mod+F2 [class="terminal"]      move workspace current
+
+# Get me to the next open VIM instance
+#bindsym Ctrl+grave [class="terminal"] focus
+
+# Show the first scratchpad window
+bindsym Ctrl+grave scratchpad show
+
+# The middle button over a titlebar kills the window
+bindsym --release button2 kill
+
+# Screen Shots
+bindsym --release $mod+x exec --no-startup-id import /tmp/latest-screenshot.png
+bindsym Print exec scrot -e 'mv $f $pictures_folder/Scrot/$f'
+bindsym Mod1+Print exec scrot -u -e 'mv $f $pictures_folder/Scrot/$f'
+bindsym $mod+Print exec scrot
+bindsym $mod+Mod1+Print exec scrot -u -e 'mv $f $pictures_folder/Scrot/$f && gimp $pictures_folder/Scrot/$f'
+
+# start a terminal
+bindsym $mod+Return exec /usr/bin/roxterm
+bindsym $mod+Shift+Return exec gnome-terminal
+
+# Font for window titles. Will also be used by the bar unless a different font
+# is used in the bar {} block below. ISO 10646 = Unicode
+#font -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1
+# The font above is very space-efficient, that is, it looks good, sharp and
+# clear in small sizes. However, if you need a lot of unicode glyphs or
+# right-to-left text rendering, you should instead use pango for rendering and
+# chose a FreeType font, such as:
+#font -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1
+#font pango:Ubuntu 9
+#font pango:DejaVu Sans Mono 10
+#font pango:DejaVu Sans Mono, Terminus Semi-Condensed 8
+font pango:Orbitron 9
+
+# next/previous workspace
+bindsym $mod+Tab workspace next
+bindsym $mod+Shift+Tab workspace prev
+#bindsym $mod+Tab workspace back_and_forth
+bindsym $mod+Mod1+Right workspace next
+bindsym $mod+Mod1+Left workspace prev
+
+#bindsym $mod+s layout stacking
+bindsym $mod+t layout tabbed
+bindsym $mod+e layout toggle split
+
+# Use Mouse+$mod to drag floating windows to their wanted position
+floating_modifier $mod
+
+# kill focused window
+bindsym $mod+Shift+q kill
+#bindsym $mod+Ctrl+l exec i3lock -n -ti $pictures_folder/wallpaper.png
+bindsym XF86AudioRaiseVolume exec "amixer -D pulse sset Master '5%+'"
+bindsym XF86AudioLowerVolume exec "amixer -D pulse sset Master '5%-'"
+bindsym XF86AudioMute exec "amixer -D pulse set Master toggle"
+
+#bindsym XF86AudioPlay exec "~/.bin/player toggle"
+#bindsym XF86AudioStop exec "~/.bin/player stop"
+#bindsym XF86AudioNext exec "~/.bin/player next"
+#bindsym XF86AudioPrev exec "~/.bin/player previous"
+
+bindsym $mod+space    exec --no-startup-id i3-dmenu-desktop --dmenu='rofi -i -dmenu -p "run:"'
+bindsym $mod+g        exec --no-startup-id rofi -fuzzy -show window
+
+bindsym $mod+r        exec --no-startup-id i3menu root
+bindsym $mod+Shift+G  exec --no-startup-id i3menu goto_actions
+bindsym $mod+b        exec --no-startup-id i3menu bar_actions
+bindsym $mod+i        exec --no-startup-id i3menu global_actions
+bindsym $mod+s        exec --no-startup-id i3menu scratchpad_actions
+bindsym $mod+l        exec --no-startup-id i3menu layout
+bindsym $mod+w        exec --no-startup-id i3menu window_actions
+bindsym $mod+Shift+W  exec --no-startup-id i3menu target_window_actions
+bindsym $mod+k        exec --no-startup-id i3menu workspace_actions
+bindsym $mod+Shift+K  exec --no-startup-id i3menu target_workspace_actions
+
+bindsym $mod+m        exec --no-startup-id ~/.dotfiles/bin/monitors_layout
+bindsym $mod+Shift+E  exec --no-startup-id ~/.dotfiles/bin/rofi_power_management
+
+# change focus
+bindsym $mod+Left focus left
+bindsym $mod+Down focus down
+bindsym $mod+Up focus up
+bindsym $mod+Right focus right
+
+# move focused window
+bindsym $mod+Shift+Left move left
+bindsym $mod+Shift+Down move down
+bindsym $mod+Shift+Up move up
+bindsym $mod+Shift+Right move right
+
+# split in horizontal orientation
+bindsym $mod+h split h
+
+# split in vertical orientation
+bindsym $mod+v split v
+
+# change focus between tiling / floating windows
+#bindsym $mod+space focus mode_toggle
+
+# focus the parent container
+bindsym $mod+a focus parent
+
+# focus the child container
+#bindsym $mod+d focus child
+
+# switch to workspace
+bindsym $mod+1 workspace $w1
+bindsym $mod+2 workspace $w2
+bindsym $mod+3 workspace $w3
+bindsym $mod+4 workspace $w4
+bindsym $mod+5 workspace $w5
+bindsym $mod+6 workspace $w6
+bindsym $mod+7 workspace $w7
+bindsym $mod+8 workspace $w8
+bindsym $mod+9 workspace $w9
+bindsym $mod+0 workspace $w10
+
+# move focused container to workspace
+bindsym $mod+Shift+1 move container to workspace $w1
+bindsym $mod+Shift+2 move container to workspace $w2
+bindsym $mod+Shift+3 move container to workspace $w3
+bindsym $mod+Shift+4 move container to workspace $w4
+bindsym $mod+Shift+5 move container to workspace $w5
+bindsym $mod+Shift+6 move container to workspace $w6
+bindsym $mod+Shift+7 move container to workspace $w7
+bindsym $mod+Shift+8 move container to workspace $w8
+bindsym $mod+Shift+9 move container to workspace $w9
+bindsym $mod+Shift+0 move container to workspace $w10
+
+# reload the configuration file
+bindsym $mod+Shift+c reload
+# restart i3 inplace (preserves your layout/session, can be used to upgrade i3)
+bindsym $mod+Shift+r restart
+
+# resize window (you can also use the mouse for that)
+mode "resize" {
+        # These bindings trigger as soon as you enter the resize mode
+bindsym $mod+Mod1+R mode "i3menu"
+        # Pressing left will shrink the window’s width.
+        # Pressing right will grow the window’s width.
+        # Pressing up will shrink the window’s height.
+        # Pressing down will grow the window’s height.
+        bindsym j resize shrink width 10 px or 10 ppt
+        bindsym k resize grow height 10 px or 10 ppt
+        bindsym l resize shrink height 10 px or 10 ppt
+        bindsym ograve resize grow width 10 px or 10 ppt
+
+        # same bindings, but for the arrow keys
+        bindsym Left resize shrink width 10 px or 10 ppt
+        bindsym Down resize grow height 10 px or 10 ppt
+        bindsym Up resize shrink height 10 px or 10 ppt
+        bindsym Right resize grow width 10 px or 10 ppt
+
+        # back to normal: Enter or Escape
+        bindsym Return mode "default"
+        bindsym Escape mode "default"
+}
+bindsym $mod+Mod1+R mode "resize"
+
+# Start i3bar to display a workspace bar (plus the system information i3status
+# finds out, if available)
+bar {
+    id bar-0
+    # tray_output primary
+    position top
+    status_command $i3_path/conky/conky-i3bar
+    # i3bar_command $i3_path/lemonbar/i3_lemonbar.sh
+
+    colors {
+        background #24364F
+        statusline #CCCCCC
+
+        focused_workspace  #ffffff #285577
+        active_workspace   #cccccc #333333
+        inactive_workspace #999999 #222222
+        urgent_workspace   #ffffff #900000
+    }
+}
+# bar {
+#     id bar-1
+#     workspace_buttons off
+#     tray_output off
+#     position top
+#     status_command $i3_path/conky/conky-i3bar
+#     colors {
+#         background #24364F
+#     }
+# }
+
+# Original windows decoration colors
+# class                 border  backgr. text    indicator
+client.focused          #4c7899 #285577 #ffffff #2e9ef4
+#client.focused          #4c7899 #285577 #ffffff #2e9ef4
+#client.focused_inactive #333333 #5f676a #ffffff #484e50
+#client.unfocused        #333333 #222222 #888888 #292d2e
+#client.urgent           #2f343a #900000 #ffffff #900000
+client.unfocused          #4c7899 #24364F #aaaaaa #2e9ef4
+client.focused          #c10101 #880404 #ffffff #00AA00
+
+# hide vertical borders adjacent to the screen edges
+hide_edge_borders both
+
+# This prevent the focus to follow mouse movements
+#focus_follows_mouse no
+
+## Autostart section
+exec --no-startup-id gnome-settings-daemon
+exec --no-startup-id nm-applet
+exec --no-startup-id gnome-sound-applet
+exec --no-startup-id roxterm
+exec --no-startup-id compton -b
+exec --no-startup-id xbindkeys
+exec --no-startup-id firefox
+
+# The lightweight GTK+ clipboard manager.
+exec --no-startup-id parcellite
+# exec --no-startup-id gnome-clocks
+# exec --no-startup-id xfce4-panel --disable-wm-check
+exec --no-startup-id feh --bg-scale ~/Pictures/Wallpapers/Wallpaper.png
+
+exec --no-startup-id dropbox start
+exec --no-startup-id pulseaudio --start
+exec --no-startup-id xrandr --output $OUTPUT_E --auto --right-of $OUTPUT_I
+
+## Workspaces
+#workspace_auto_back_and_forth yes
+workspace "$w1" output $OUTPUT_E
+workspace "$w2" output $OUTPUT_E
+workspace "$w3" output $OUTPUT_E
+workspace "$w4" output $OUTPUT_I
+
+# exec echo “.i3/config: DESKTOP_AUTOSTART_ID $DESKTOP_AUTOSTART_ID, registering with org.gnome.SessionManager”
