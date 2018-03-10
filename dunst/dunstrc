@@ -1,6 +1,6 @@
 [global]
     #font = Fira Code Retina 20
-    font = Hack 16
+    font = Hack 10
     
     # Allow a small subset of html markup:
     #   <b>bold</b>

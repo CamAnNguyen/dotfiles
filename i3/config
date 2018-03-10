@@ -26,15 +26,16 @@ set $i3_path $HOME/.config/i3
 set $pictures_folder ~/Pictures
 
 # Fancy names for workspaces
-set $w1 "1: Chromium "
-set $w2 "2: Editor "
-set $w3 "3: Console "
-set $w4 "4"
-set $w5 "5: Ranger "
-set $w6 "6: Email "
-set $w7 "7: Chat "
-set $w8 "8: Incognito "
-set $w9 "9: Music "
+set $w1 "1:Chromium"
+set $w2 "2:Editor"
+set $w3 "3:Term"
+set $w4 "4:Misc"
+set $w5 "5:Ranger"
+set $w6 "6:Email"
+set $w7 "7:Chat"
+set $w8 "8:Incognito"
+set $w9 "9:Music"
+
 #set $w3 "3: Firefox "
 #set $w4 "4: Editor "
 #set $w4 "4: Música "

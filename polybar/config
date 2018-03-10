@@ -127,12 +127,12 @@ wrapping-scroll = false
 ws-icon-0 = 1:Chromium;
 ws-icon-1 = 2:Editor;
 ws-icon-2 = 3:Term;
-; ws-icon-3 = 4
+ws-icon-3 = 4:Misc;
 ws-icon-4 = 5:Ranger;
 ws-icon-5 = 6:Email;
-ws-icon-6 = 7:Chat;
+ws-icon-6 = 7:Chat;
 ws-icon-7 = 8:Incognito;
-ws-icon-8 = 9:Music;
+ws-icon-8 = 9:Music;
 ; ws-icon-9 = 10:Ranger;
 ; ws-icon-default = ♟
 
