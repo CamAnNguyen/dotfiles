@@ -529,6 +529,13 @@ you should place your code here."
     (define-key evil-normal-state-map (kbd "s") 'my-evil-insert-char)
     (define-key evil-normal-state-map (kbd "S") 'my-evil-append-char))
 
+  (defadvice js-jsx-indent-line (after js-jsx-indent-line-after-hack activate)
+    "Workaround sgml-mode and follow airbnb component style."
+    (save-excursion
+      (beginning-of-line)
+      (if (looking-at-p "^ +\/?> *$")
+          (delete-char sgml-basic-offset))))
+
   ;; javascript
   (setq-default
    ;; js2-mod
