@@ -39,7 +39,7 @@ values."
             c-c++-enable-clang-support t)
      javascript
      html
-     ruby
+     (ruby :variables ruby-version-manager 'rvm)
      shell-scripts
      (python :variables
              python-enable-yapf-format-on-save nil)
@@ -49,6 +49,10 @@ values."
      (auto-completion :variables
                       auto-completion-enable-snippets-in-popup t
                       auto-completion-enable-help-tooltip 'manual
+                      ;; tab key to complete as much of common completion as possible
+                      auto-completion-tab-key-behavior 'cycle
+                      ;; enable the most frequent matches to show first
+                      auto-completion-enable-sort-by-usage t
                       :disabled-for markdown git)
      better-defaults
      git
@@ -67,11 +71,6 @@ values."
       atom-one-dark-theme
       doom-themes
       solaire-mode
-      (rjsx-mode :location (recipe
-                            :fetcher github
-                            :repo "wyuenho/rjsx-mode"
-                            :branch "indent-after-jsx-expr")
-                 :mode ("\\.jsx?\\'" "\\.js\\'"))
       all-the-icons
       all-the-icons-dired
       hlinum
@@ -80,6 +79,7 @@ values."
       quickrun
       smart-backspace
       flycheck-package
+      rjsx-mode
       google-c-style
     )
    ;; A list of packages that cannot be updated.
@@ -137,7 +137,7 @@ values."
    ;; directory. A string value must be a path to an image format supported
    ;; by your Emacs build.
    ;; If the value is nil then no banner is displayed. (default 'official)
-   dotspacemacs-startup-banner 'official
+   dotspacemacs-startup-banner nil
    ;; List of items to show in startup buffer or an association list of
    ;; the form `(list-type . list-size)`. If nil then it is disabled.
    ;; Possible values for list-type are:
@@ -361,12 +361,15 @@ This is the place where most of your configurations should be done. Unless it is
 explicitly specified that a variable should be set before a package is loaded,
 you should place your code here."
 
+  ;; Always follow .spacemacs symbolic link
+  (setq vc-follow-symlinks t)
 
-  ;;
-  ;; emacs settings
-  ;;
+  ;; Use Spacemacs as the $EDITOR for git commits?
+  (global-git-commit-mode t)
 
-  (add-to-list 'load-path "~/dotfiles/.spacemacs.d/local/")
+  ;; flycheck emacs package
+  (eval-after-load 'flycheck
+    '(flycheck-package-setup))
 
   ;; don't create backup files
   (setq make-backup-files nil
@@ -484,10 +487,6 @@ you should place your code here."
   ;;   (add-hook 'flycheck-mode-hook 'flycheck-popup-tip-mode)
   ;;   (setq flycheck-popup-tip-margin 2))
 
-  ;; flycheck emacs package
-  (eval-after-load 'flycheck
-    '(flycheck-package-setup))
-
   ;; magit setting
   ;; (use-package magit-pretty-graph)
 
@@ -502,22 +501,19 @@ you should place your code here."
   ;;
 
   ;; ruby
-  (setq ruby-insert-encoding-magic-comment nil)
+  ;; (setq ruby-insert-encoding-magic-comment nil)
 
   ;; emacs-lisp
   (remove-hook 'emacs-lisp-mode-hook 'auto-compile-mode)
 
-  ;; typescript
-  (add-to-list 'auto-mode-alist '("\\.tsx\\'" . web-mode))
-  (add-hook 'web-mode-hook
-            (lambda ()
-              (when (string-equal "tsx" (file-name-extension buffer-file-name))
-                (setup-tide-mode))))
-  ;; enable typescript-tslint checker
-  (flycheck-add-mode 'typescript-tslint 'web-mode)
-
-  ;; rjsx for js files
-  (add-to-list 'auto-mode-alist '("components\\/.*\\.js\\'" . rjsx-mode))
+  ;; ;; typescript
+  ;; (add-to-list 'auto-mode-alist '("\\.tsx\\'" . web-mode))
+  ;; (add-hook 'web-mode-hook
+  ;;           (lambda ()
+  ;;             (when (string-equal "tsx" (file-name-extension buffer-file-name))
+  ;;               (setup-tide-mode))))
+  ;; ;; enable typescript-tslint checker
+  ;; (flycheck-add-mode 'typescript-tslint 'web-mode)
 
   ;; c-c++
   (add-hook 'c-mode-hook
@@ -548,14 +544,58 @@ you should place your code here."
     (define-key evil-normal-state-map (kbd "s") 'my-evil-insert-char)
     (define-key evil-normal-state-map (kbd "S") 'my-evil-append-char))
 
-  (defadvice js-jsx-indent-line (after js-jsx-indent-line-after-hack activate)
-    "Workaround sgml-mode and follow airbnb component style."
-    (save-excursion
-      (beginning-of-line)
-      (if (looking-at-p "^ +\/?> *$")
-          (delete-char sgml-basic-offset))))
-
   ;; javascript
+
+  ;; rjsx for js files
+  (add-to-list 'auto-mode-alist '("components\\/.*\\.js\\'" . rjsx-mode))
+
+  ;; stop default linter - use ESLint linter as part of FlyCheck
+  (setq js2-mode-show-parse-errors nil js2-mode-show-strict-warnings nil)
+
+  (defcustom add-node-modules-path-debug nil
+    "Enable verbose output when non nil."
+    :type 'boolean)
+  (defcustom add-node-modules-max-depth 20
+    "Max depth to look for node_modules."
+    :type 'integer)
+  (defun add-node-modules-path ()
+    "Search the current buffer's parent directories for `node_modules/.bin`.
+  Traverse the directory structure up, until reaching the user's home directory,
+  or hitting add-node-modules-max-depth.
+  Any path found is added to the `exec-path'."
+    (interactive)
+    (let* ((default-dir (expand-file-name default-directory))
+          (file (or (buffer-file-name) default-dir))
+          (home (expand-file-name "~"))
+          (iterations add-node-modules-max-depth)
+          (root (directory-file-name (or (and (buffer-file-name) (file-name-directory (buffer-file-name))) default-dir)))
+          (roots '()))
+      (while (and root (> iterations 0))
+        (setq iterations (1- iterations))
+        (let ((bindir (expand-file-name "node_modules/.bin/" root)))
+          (when (file-directory-p bindir)
+            (add-to-list 'roots bindir)))
+        (if (string= root home)
+            (setq root nil)
+          (setq root (directory-file-name (file-name-directory root)))))
+      (if roots
+          (progn
+            (make-local-variable 'exec-path)
+            (while roots
+              (add-to-list 'exec-path (car roots))
+              (when add-node-modules-path-debug
+                (message (concat "added " (car roots) " to exec-path")))
+              (setq roots (cdr roots))))
+        (when add-node-modules-path-debug
+          (message (concat "node_modules/.bin not found for " file))))))
+  (defun setup-rjsxmode()
+    (flycheck-select-checker 'javascript-eslint)
+    (flycheck-mode)
+    (add-node-modules-path))
+
+  (eval-after-load 'rjsx-mode
+    '(add-hook 'rjsx-mode-hook #'setup-rjsxmode))
+
   (setq-default
    ;; js2-mod
    js2-basic-offset 2
@@ -572,6 +612,13 @@ you should place your code here."
     (add-to-list 'web-mode-indentation-params '("lineup-args" . nil))
     (add-to-list 'web-mode-indentation-params '("lineup-concats" . nil))
     (add-to-list 'web-mode-indentation-params '("lineup-calls" . nil)))
+
+  (defadvice js-jsx-indent-line (after js-jsx-indent-line-after-hack activate)
+    "Workaround sgml-mode and follow airbnb component style."
+    (save-excursion
+      (beginning-of-line)
+      (if (looking-at-p "^ +\/?> *$")
+          (delete-char sgml-basic-offset))))
 
   )
 
@@ -679,7 +726,7 @@ This function is called at the very end of Spacemacs initialization."
  '(org-fontify-whole-heading-line t)
  '(package-selected-packages
    (quote
-    (yasnippet-snippets symon string-inflection seeing-is-believing ruby-refactor ruby-hash-syntax pippel pipenv password-generator org-brain magit-svn json-navigator hierarchy importmagic epc ctable concurrent deferred impatient-mode helm-xref helm-rtags helm-purpose window-purpose gitignore-templates flycheck-rtags flycheck-bashate evil-org evil-lion evil-goggles evil-cleverparens paredit editorconfig counsel-projectile counsel swiper ivy company-rtags rtags centered-cursor-mode browse-at-remote dotenv-mode org-plus-contrib quelpa orgit org-mime google-c-style imenu-list doome-one-theme smart-backspace migemo flycheck-package package-lint ghub let-alist prettier-js eslintd-fix yaml-mode tide typescript-mode csv-mode stickyfunc-enhance srefactor disaster company-c-headers cmake-mode clang-format spaceline-all-the-icons solaire-mode org-category-capture company-quickhelp hlinum doom-themes all-the-icons-dired flyspell-popup quickrun mozc rainbow-mode powerline spinner hydra parent-mode projectile pkg-info epl flx smartparens iedit anzu evil goto-chg undo-tree highlight diminish bind-map bind-key packed f dash s helm avy helm-core popup rjsx-mode web-mode tagedit slim-mode scss-mode sass-mode pug-mode less-css-mode helm-css-scss haml-mode emmet-mode company-web web-completion-data plantuml-mode lispxmp auto-save-buffers-enhanced rvm ruby-tools ruby-test-mode rubocop rspec-mode robe rbenv rake minitest chruby bundler inf-ruby insert-shebang fish-mode company-shell all-the-icons memoize font-lock+ vimrc-mode dactyl-mode yapfify xterm-color web-beautify unfill slime-company slime shell-pop pyvenv pytest pyenv-mode py-isort pip-requirements mwim multi-term mmm-mode markdown-toc markdown-mode livid-mode skewer-mode simple-httpd live-py-mode json-mode json-snatcher json-reformat js2-refactor multiple-cursors js2-mode js-doc hy-mode helm-pydoc git-gutter-fringe+ git-gutter-fringe fringe-helper git-gutter+ git-gutter gh-md eshell-z eshell-prompt-extras esh-help diff-hl cython-mode company-tern dash-functional tern company-anaconda common-lisp-snippets coffee-mode anaconda-mode pythonic smeargle org-projectile org-present org-pomodoro alert log4e gntp org-download magit-gitflow htmlize helm-gitignore helm-company helm-c-yasnippet gnuplot gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link fuzzy flyspell-correct-helm flyspell-correct flycheck-pos-tip pos-tip flycheck evil-magit magit magit-popup git-commit with-editor async company-statistics company auto-yasnippet yasnippet auto-dictionary ac-ispell auto-complete atom-one-dark-theme ws-butler winum which-key volatile-highlights vi-tilde-fringe uuidgen use-package toc-org spaceline restart-emacs request rainbow-delimiters popwin persp-mode pcre2el paradox org-bullets open-junk-file neotree move-text macrostep lorem-ipsum linum-relative link-hint info+ indent-guide hungry-delete hl-todo highlight-parentheses highlight-numbers highlight-indentation hide-comnt help-fns+ helm-themes helm-swoop helm-projectile helm-mode-manager helm-make helm-flx helm-descbinds helm-ag google-translate golden-ratio flx-ido fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-search-highlight-persist evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state evil-indent-plus evil-iedit-state evil-exchange evil-escape evil-ediff evil-args evil-anzu eval-sexp-fu elisp-slime-nav dumb-jump define-word column-enforce-mode clean-aindent-mode auto-highlight-symbol auto-compile aggressive-indent adaptive-wrap ace-window ace-link ace-jump-helm-line)))
+    (add-node-modules-path org-plus-contrib quelpa orgit org-mime google-c-style imenu-list doome-one-theme smart-backspace migemo flycheck-package package-lint ghub let-alist prettier-js eslintd-fix yaml-mode tide typescript-mode csv-mode stickyfunc-enhance srefactor disaster company-c-headers cmake-mode clang-format spaceline-all-the-icons solaire-mode org-category-capture company-quickhelp hlinum doom-themes all-the-icons-dired flyspell-popup quickrun mozc rainbow-mode powerline spinner hydra parent-mode projectile pkg-info epl flx smartparens iedit anzu evil goto-chg undo-tree highlight diminish bind-map bind-key packed f dash s helm avy helm-core popup rjsx-mode web-mode tagedit slim-mode scss-mode sass-mode pug-mode less-css-mode helm-css-scss haml-mode emmet-mode company-web web-completion-data plantuml-mode lispxmp auto-save-buffers-enhanced rvm ruby-tools ruby-test-mode rubocop rspec-mode robe rbenv rake minitest chruby bundler inf-ruby insert-shebang fish-mode company-shell all-the-icons memoize font-lock+ vimrc-mode dactyl-mode yapfify xterm-color web-beautify unfill slime-company slime shell-pop pyvenv pytest pyenv-mode py-isort pip-requirements mwim multi-term mmm-mode markdown-toc markdown-mode livid-mode skewer-mode simple-httpd live-py-mode json-mode json-snatcher json-reformat js2-refactor multiple-cursors js2-mode js-doc hy-mode helm-pydoc git-gutter-fringe+ git-gutter-fringe fringe-helper git-gutter+ git-gutter gh-md eshell-z eshell-prompt-extras esh-help diff-hl cython-mode company-tern dash-functional tern company-anaconda common-lisp-snippets coffee-mode anaconda-mode pythonic smeargle org-projectile org-present org-pomodoro alert log4e gntp org-download magit-gitflow htmlize helm-gitignore helm-company helm-c-yasnippet gnuplot gitignore-mode gitconfig-mode gitattributes-mode git-timemachine git-messenger git-link fuzzy flyspell-correct-helm flyspell-correct flycheck-pos-tip pos-tip flycheck evil-magit magit magit-popup git-commit with-editor async company-statistics company auto-yasnippet yasnippet auto-dictionary ac-ispell auto-complete atom-one-dark-theme ws-butler winum which-key volatile-highlights vi-tilde-fringe uuidgen use-package toc-org spaceline restart-emacs request rainbow-delimiters popwin persp-mode pcre2el paradox org-bullets open-junk-file neotree move-text macrostep lorem-ipsum linum-relative link-hint info+ indent-guide hungry-delete hl-todo highlight-parentheses highlight-numbers highlight-indentation hide-comnt help-fns+ helm-themes helm-swoop helm-projectile helm-mode-manager helm-make helm-flx helm-descbinds helm-ag google-translate golden-ratio flx-ido fill-column-indicator fancy-battery eyebrowse expand-region exec-path-from-shell evil-visualstar evil-visual-mark-mode evil-unimpaired evil-tutor evil-surround evil-search-highlight-persist evil-numbers evil-nerd-commenter evil-mc evil-matchit evil-lisp-state evil-indent-plus evil-iedit-state evil-exchange evil-escape evil-ediff evil-args evil-anzu eval-sexp-fu elisp-slime-nav dumb-jump define-word column-enforce-mode clean-aindent-mode auto-highlight-symbol auto-compile aggressive-indent adaptive-wrap ace-window ace-link ace-jump-helm-line)))
  '(paradox-github-token t)
  '(safe-local-variable-values (quote ((helm-make-build-dir . "build/"))))
  '(vc-annotate-background "#1B2229")
