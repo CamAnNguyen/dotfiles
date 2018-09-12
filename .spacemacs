@@ -388,7 +388,7 @@ you should place your code here."
   (setq powerline-default-separator 'utf-8)
 
   ;; diable tilde
-  (spacemacs/toggle-vi-tilde-fringe-off)
+  ;; (spacemacs/toggle-vi-tilde-fringe-off)
 
   ;; ;; version-controll layer
   ;; (setq-default fringes-outside-margins t)
